@@ -55,7 +55,7 @@ impl Args {
                     EventType::MouseMove { x, y } => {
                         point = (x, y);
                     }
-                    EventType::KeyRelease(Key::Alt | Key::AltGr) => {
+                    EventType::KeyRelease(Key::AltGr) => {
                         println!("{}, {}", point.0, point.1)
                     }
                     EventType::KeyRelease(Key::Escape) => {

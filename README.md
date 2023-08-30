@@ -8,7 +8,7 @@
 # 获取按键代码
 ./kmm.exe event
 
-# 获取坐标: Alt 获取当前鼠标坐标 Esc 清屏
+# 获取坐标: AltGr(右) 获取当前鼠标坐标 Esc 清屏
 ./kmm.exe point
 ```
 
