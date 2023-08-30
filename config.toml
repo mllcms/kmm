@@ -1,24 +1,3 @@
-## 键鼠宏脚本
-
-### 使用 
-```shell
-# 运行脚本
-./kmm.exe run ./config.toml
-
-# 获取按键代码
-./kmm.exe event
-
-# 获取坐标: Alt 获取当前鼠标坐标 Esc 清屏
-./kmm.exe point
-```
-
-###  在某些软件/游戏上可能没反应
-- 这些软件可能是 root 权限打开的
-- kmm 也需要 root 权限打开才能生效
-- 可以生成 kmm 的快捷方式配置好启动命令右键管理员启动
-
-### 配置说明
-```toml
 # 全局延迟
 delay = 20
 # 电脑的缩放比例
@@ -26,25 +5,25 @@ scaling = 1.5
 
 # 脚本 A 退出程序
 [[scripts]]
+# 单独配置延迟
+delay = 10
 repeat = 1
 trigger = [{ key = "End" }]
 methods = [{ event = "Exit" }]
 
 # 脚本 B 鼠标侧键回到桌面
 [[scripts]]
-# 单独配置延迟
-delay = 10
-# 执行次数; PS: 0 无限循环直到下次触发停止
 repeat = 1
-# 触发的按键; PS: 没有数量和按键限制
 trigger = [{ mouse = { Unknown = 1 } }]
-# 脚本方法
 methods = [{ event = "Keys", args = ["MetaLeft", "KeyD"] }]
 
 # 脚本 C XXX
 [[scripts]]
+# 执行次数; PS: 0 无限循环直到下次触发停止
 repeat = 0
+# 触发的按键; PS: 没有数量和按键限制
 trigger = [{ key = "PageUp" }]
+# 脚本方法
 methods = [
     # 点击当前鼠标位置
     { event = "Click", args = "Left" },
@@ -73,4 +52,3 @@ methods = [
     # 退出整个程序
     { event = "Exit" },
 ]
-```
