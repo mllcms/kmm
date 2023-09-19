@@ -1,40 +1,20 @@
-use crate::script::config::{transform, KeyOrButton, Method, ScriptConfig};
+use crate::script::config::{KeyOrButton, Method};
 use rdev::{listen, simulate, Event, EventType, ListenError};
 use std::collections::{HashMap, HashSet};
-use std::error::Error;
-use std::fs;
-use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
+use tokio::sync::mpsc::UnboundedSender;
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
 
 pub mod config;
+pub mod window;
 
 /// 脚本列表
 pub struct ScriptList(pub Vec<Script>);
 
 impl ScriptList {
-    /// 加载脚本配置
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, Box<dyn Error>> {
-        let data = fs::read_to_string(path)?;
-        let data: ScriptConfig = toml::from_str(&data)?;
-        let list: Vec<Script> = data
-            .scripts
-            .into_iter()
-            .map(|item| Script {
-                delay: item.delay.unwrap_or(data.delay),
-                trigger: item.trigger.into_iter().map(|m| (m, false)).collect(),
-                repeat: item.repeat,
-                task: None,
-                methods: Arc::new(transform(item.methods, data.scaling)),
-            })
-            .collect();
-
-        Ok(Self(list))
-    }
-
     /// 监听脚本的触发
     pub fn listening(mut self) -> Result<(), ListenError> {
         let (tx, mut rx) = mpsc::unbounded_channel::<Event>();
@@ -93,26 +73,35 @@ impl ScriptList {
 
 #[derive(Debug)]
 pub struct Script {
+    pub title: String,
     pub delay: u64,
     pub repeat: usize,
     pub methods: Arc<Vec<Method>>,
     pub task: Option<JoinHandle<()>>,
     pub trigger: HashMap<KeyOrButton, bool>,
+    pub updater: UnboundedSender<(String, bool)>,
 }
 
 impl Script {
     pub fn run(&mut self) {
+        let title = self.title.clone();
+        let updater = self.updater.clone();
+
         if let Some(task) = self.task.take() {
             task.abort();
             // 开关型不重启
             if self.repeat == 0 {
+                let _ = updater.send((title.clone(), false));
                 return;
             }
         }
 
+        let _ = updater.send((title.clone(), true));
+
         let delay = self.delay;
         let repeat = self.repeat;
         let methods = self.methods.clone();
+
         let task = tokio::task::spawn(async move {
             if repeat == 0 {
                 loop {
@@ -122,10 +111,11 @@ impl Script {
                 for _ in 0..repeat {
                     run_method(&methods, delay).await;
                 }
+                let _ = updater.send((title, false));
             }
         });
 
-        self.task = Some(task)
+        self.task = Some(task);
     }
 
     pub fn down(&mut self, key: &KeyOrButton) {
