@@ -21,30 +21,50 @@
 ```toml
 # 全局延迟
 delay = 20
-# 电脑的缩放比例
+# 缩放比例
 scaling = 1.5
+# 偏移位置(一般双屏才用)
+offset = [0, 0]
+# 窗口位置
+point = [800.0, 80.0]
+# 字体大小
+font_size = 20.0
+# 字体颜色
+font_color = [97, 218, 217]
+# 是否显示边框
+border = false
 
-# 脚本 A 退出程序
+# 脚本 A
 [[scripts]]
+title = "退出程序"
+# 单独配置延迟
+delay = 10
 repeat = 1
 trigger = [{ key = "End" }]
 methods = [{ event = "Exit" }]
 
-# 脚本 B 鼠标侧键回到桌面
+# 脚本 B
 [[scripts]]
-# 单独配置延迟
-delay = 10
-# 执行次数; PS: 0 无限循环直到下次触发停止
+title = "鼠标侧键回到桌面"
 repeat = 1
-# 触发的按键; PS: 没有数量和按键限制
 trigger = [{ mouse = { Unknown = 1 } }]
-# 脚本方法
 methods = [{ event = "Keys", args = ["MetaLeft", "KeyD"] }]
 
-# 脚本 C XXX
+# 脚本 C
 [[scripts]]
+title = "测试显示"
+repeat = 4
+trigger = [{ key = "Home" }]
+methods = [{ event = "Sleep", args = 500 }]
+
+# 脚本 D
+[[scripts]]
+title = "XXX"
+# 执行次数; PS: 0 无限循环直到下次触发停止
 repeat = 0
+# 触发的按键; PS: 没有数量和按键限制
 trigger = [{ key = "PageUp" }]
+# 脚本方法
 methods = [
     # 点击当前鼠标位置
     { event = "Click", args = "Left" },

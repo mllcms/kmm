@@ -1,17 +1,17 @@
 # 全局延迟
 delay = 20
-# 电脑的缩放比例
+# 缩放比例
 scaling = 1.5
-# 偏移位置
+# 偏移位置(一般双屏才用)
 offset = [0, 0]
 # 窗口位置
-point = [800.0, 30.0]
+point = [800.0, 80.0]
 # 字体大小
 font_size = 20.0
 # 字体颜色
 font_color = [97, 218, 217]
 # 是否显示边框
-border = true
+border = false
 
 # 脚本 A
 [[scripts]]
@@ -24,9 +24,9 @@ methods = [{ event = "Exit" }]
 
 # 脚本 B
 [[scripts]]
+title = "鼠标侧键回到桌面"
 repeat = 1
 trigger = [{ mouse = { Unknown = 1 } }]
-title = "鼠标侧键回到桌面"
 methods = [{ event = "Keys", args = ["MetaLeft", "KeyD"] }]
 
 # 脚本 C
