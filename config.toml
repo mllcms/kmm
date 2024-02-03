@@ -5,9 +5,9 @@ scaling = 1.5
 # 偏移位置(一般双屏才用)
 offset = [0, 0]
 # 窗口位置
-point = [800.0, 80.0]
+point = [800, 80]
 # 字体大小
-font_size = 20.0
+font_size = 20
 # 字体颜色
 font_color = [97, 218, 217]
 # 是否显示边框
@@ -36,7 +36,7 @@ repeat = 4
 trigger = [{ key = "Home" }]
 methods = [{ event = "Sleep", args = 500 }]
 
-# 脚本 D
+# 脚本D
 [[scripts]]
 title = "XXX"
 # 执行次数; PS: 0 无限循环直到下次触发停止

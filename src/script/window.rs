@@ -1,11 +1,12 @@
+use std::collections::HashMap;
+use std::fmt::Write;
+
 use druid::theme::TEXT_COLOR;
 use druid::widget::{CrossAxisAlignment, Flex, Label};
 use druid::{
-    AppLauncher, Color, Data, Env, FontDescriptor, FontFamily, FontWeight, Key, PlatformError,
-    Point, Widget, WidgetExt, WindowDesc, WindowSizePolicy,
+    AppLauncher, Color, Data, Env, FontDescriptor, FontFamily, FontWeight, Key, PlatformError, Point, Widget,
+    WidgetExt, WindowDesc, WindowSizePolicy,
 };
-use std::collections::HashMap;
-use std::fmt::Write;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -23,12 +24,7 @@ impl WindowList {
         self.app.launch(self.app_data)
     }
 
-    pub fn init(
-        point: impl Into<Point>,
-        font_size: f64,
-        font_color: (u8, u8, u8),
-        border: bool,
-    ) -> Self {
+    pub fn init(point: impl Into<Point>, font_size: f64, font_color: (u8, u8, u8), border: bool) -> Self {
         let (tx, mut rx) = mpsc::unbounded_channel::<(String, bool)>();
         let window = WindowDesc::new(ui_builder())
             .title("脚本列表")
@@ -38,18 +34,13 @@ impl WindowList {
             .transparent(true)
             .window_size_policy(WindowSizePolicy::Content);
 
-        let app = AppLauncher::with_window(window).configure_env(
-            move |env: &mut Env, _data: &AppData| {
-                let new_font = FontDescriptor::new(FontFamily::SYSTEM_UI)
-                    .with_size(font_size)
-                    .with_weight(FontWeight::BLACK);
-                env.set(MY_FONT, new_font);
-                env.set(
-                    TEXT_COLOR,
-                    Color::rgb8(font_color.0, font_color.1, font_color.2),
-                );
-            },
-        );
+        let app = AppLauncher::with_window(window).configure_env(move |env: &mut Env, _data: &AppData| {
+            let new_font = FontDescriptor::new(FontFamily::SYSTEM_UI)
+                .with_size(font_size)
+                .with_weight(FontWeight::BLACK);
+            env.set(MY_FONT, new_font);
+            env.set(TEXT_COLOR, Color::rgb8(font_color.0, font_color.1, font_color.2));
+        });
 
         let ext = app.get_external_handle();
         tokio::spawn(async move {

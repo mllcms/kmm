@@ -1,5 +1,3 @@
-use rdev::{Button, EventType, Key};
-use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -8,6 +6,9 @@ use std::process::exit;
 use std::sync::Arc;
 use std::time::Duration;
 use std::{fs, mem};
+
+use rdev::{Button, EventType, Key};
+use serde::{Deserialize, Serialize};
 use tokio::time::sleep;
 
 use crate::script::window::WindowList;
@@ -45,12 +46,7 @@ impl Config {
             exit(0)
         }
 
-        let win = WindowList::init(
-            config.point,
-            config.font_size,
-            config.font_color,
-            config.border,
-        );
+        let win = WindowList::init(config.point, config.font_size, config.font_color, config.border);
 
         let mut scripts = vec![];
         mem::swap(&mut config.scripts, &mut scripts);
@@ -237,10 +233,7 @@ impl Display for ScriptEvent {
             ScriptEvent::KeyUp(key) => key_to_toml(key),
             ScriptEvent::KeyDown(key) => key_to_toml(key),
             ScriptEvent::Key(key) => key_to_toml(key),
-            ScriptEvent::Keys(keys) => format!(
-                "[{}]",
-                keys.iter().map(key_to_toml).collect::<Vec<_>>().join(", ")
-            ),
+            ScriptEvent::Keys(keys) => format!("[{}]", keys.iter().map(key_to_toml).collect::<Vec<_>>().join(", ")),
             ScriptEvent::Move(x, y) => format!("[{x}, {y}]"),
             ScriptEvent::Scroll(x, y) => format!("[{x}, {y}]"),
             ScriptEvent::Sleep(n) => n.to_string(),

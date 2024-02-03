@@ -1,12 +1,14 @@
-use crate::script::config::{KeyOrButton, Method};
-use rdev::{listen, simulate, Event, EventType, ListenError};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Duration;
+
+use rdev::{listen, simulate, Event, EventType, ListenError};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::UnboundedSender;
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
+
+use crate::script::config::{KeyOrButton, Method};
 
 pub mod config;
 pub mod window;
@@ -20,11 +22,7 @@ impl ScriptList {
         let (tx, mut rx) = mpsc::unbounded_channel::<Event>();
 
         tokio::spawn(async move {
-            let triggers: HashSet<KeyOrButton> = self
-                .0
-                .iter()
-                .flat_map(|m| m.trigger.keys().cloned())
-                .collect();
+            let triggers: HashSet<KeyOrButton> = self.0.iter().flat_map(|m| m.trigger.keys().cloned()).collect();
 
             while let Some(event) = rx.recv().await {
                 match event.event_type {

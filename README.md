@@ -26,9 +26,9 @@ scaling = 1.5
 # 偏移位置(一般双屏才用)
 offset = [0, 0]
 # 窗口位置
-point = [800.0, 80.0]
+point = [800, 80]
 # 字体大小
-font_size = 20.0
+font_size = 20
 # 字体颜色
 font_color = [97, 218, 217]
 # 是否显示边框
