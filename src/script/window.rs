@@ -25,13 +25,15 @@ impl WindowList {
 
     pub fn init(point: impl Into<Point>, font_size: f64, font_color: (u8, u8, u8), border: bool) -> Self {
         let (updater, mut rx) = mpsc::unbounded_channel::<Title>();
+        let window_handle = WindowHandle::default();
         let window = WindowDesc::new(ui_builder())
             .title("脚本列表")
+            .transparent(true)
             .set_position(point)
             .show_titlebar(border)
             .set_always_on_top(true)
-            .transparent(true)
-            .window_size_policy(WindowSizePolicy::Content);
+            .window_size_policy(WindowSizePolicy::Content)
+            .set_level(WindowLevel::Tooltip(window_handle));
         let app = AppLauncher::with_window(window).configure_env(move |env: &mut Env, _data: &AppData| {
             let new_font = FontDescriptor::new(FontFamily::SYSTEM_UI)
                 .with_size(font_size)
