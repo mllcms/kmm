@@ -3,7 +3,9 @@
 ### 使用 
 ```shell
 # 运行脚本
+./kmm.exe
 ./kmm.exe run ./config.toml
+./kmm.exe run config_path
 
 # 获取按键代码
 ./kmm.exe event
@@ -15,7 +17,7 @@
 ###  在某些软件/游戏上可能没反应
 - 这些软件可能是 root 权限打开的
 - kmm 也需要 root 权限打开才能生效
-- 可以生成 kmm 的快捷方式配置好启动命令右键管理员启动
+- 快速运行指定配置文件可以用快捷方式配置命令
 
 ### 配置说明
 ```toml
