@@ -1,18 +1,42 @@
-use clap::Parser;
-use rdev::{listen, Event, EventType, Key};
 use std::ops::Sub;
 use std::path::PathBuf;
 use std::process::exit;
 use std::time::{Duration, Instant};
 
+use clap::{Parser, Subcommand};
+use rdev::{listen, Event, EventType, Key};
+
 use crate::script::config::{Config, ScriptEvent};
 
 pub mod script;
+pub mod sing_app;
 
 /// 键鼠宏脚本(无反应或需 root 启动)
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
-pub enum Args {
+pub struct Cli {
+    #[command(subcommand)]
+    sub_command: Option<Commands>,
+}
+
+impl Cli {
+    pub fn run(self) {
+        match self.sub_command {
+            None => {
+                Run { config: PathBuf::from("./config.toml") }.run();
+            }
+            Some(command) => match command {
+                Commands::Run(r) => r.run(),
+                Commands::Event => event(),
+                Commands::Point => point(),
+                Commands::Record => record(),
+            },
+        }
+    }
+}
+
+#[derive(Debug, Subcommand)]
+pub enum Commands {
     /// 运行脚本
     Run(Run),
     /// 获取事件代码
@@ -23,17 +47,6 @@ pub enum Args {
     Record,
 }
 
-impl Args {
-    pub async fn run(self) {
-        match self {
-            Args::Run(r) => r.run().await,
-            Args::Event => event(),
-            Args::Point => point(),
-            Args::Record => record(),
-        }
-    }
-}
-
 #[derive(Debug, Parser)]
 pub struct Run {
     /// 配置文件所在路径
@@ -41,7 +54,7 @@ pub struct Run {
 }
 
 impl Run {
-    async fn run(self) {
+    fn run(self) {
         match Config::load(self.config) {
             Ok((script, window)) => {
                 tokio::task::spawn_blocking(move || {
@@ -54,7 +67,7 @@ impl Run {
             }
             Err(err) => {
                 println!("加载脚本配置失败: {err}");
-                tokio::time::sleep(Duration::from_secs(30)).await;
+                std::thread::sleep(Duration::from_secs(30));
             }
         };
     }
@@ -126,9 +139,7 @@ fn record() {
                 res.push(ScriptEvent::Move(point.0, point.1));
                 res.push(ScriptEvent::ClickUp(button))
             }
-            EventType::Wheel { delta_x, delta_y } => {
-                res.push(ScriptEvent::Scroll(delta_x, delta_y))
-            }
+            EventType::Wheel { delta_x, delta_y } => res.push(ScriptEvent::Scroll(delta_x, delta_y)),
             _ => {}
         }
     };
