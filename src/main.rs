@@ -1,6 +1,5 @@
 use clap::Parser;
-use kmm::sing_app::SingApp;
-use kmm::Cli;
+use kmm::{sing_app::SingApp, Cli};
 
 #[tokio::main]
 async fn main() {

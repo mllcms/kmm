@@ -1,9 +1,12 @@
-use std::fs::File;
-use std::io::Write;
-use std::os::windows::fs::OpenOptionsExt;
-use std::thread::sleep;
-use std::time::Duration;
-use std::{env, io, process};
+use std::{
+    env,
+    fs::File,
+    io::{self, Write},
+    os::windows::fs::OpenOptionsExt,
+    process,
+    thread::sleep,
+    time::Duration,
+};
 
 pub struct SingApp {
     #[allow(unused)]

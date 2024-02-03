@@ -1,18 +1,19 @@
-use std::collections::HashSet;
-use std::error::Error;
-use std::fmt::{Display, Formatter};
-use std::path::Path;
-use std::process::exit;
-use std::sync::Arc;
-use std::time::Duration;
-use std::{fs, mem};
+use std::{
+    collections::HashSet,
+    error::Error,
+    fmt::{Display, Formatter},
+    fs, mem,
+    path::Path,
+    process::exit,
+    sync::Arc,
+    time::Duration,
+};
 
 use rdev::{Button, EventType, Key};
 use serde::{Deserialize, Serialize};
 use tokio::time::sleep;
 
-use crate::script::window::WindowList;
-use crate::script::{Script, ScriptList};
+use crate::script::{window::WindowList, Script, ScriptList};
 
 /// 脚本配置
 #[derive(Debug, Clone, Serialize, Deserialize)]

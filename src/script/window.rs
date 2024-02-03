@@ -1,14 +1,11 @@
-use std::collections::HashMap;
-use std::fmt::Write;
+use std::{collections::HashMap, fmt::Write};
 
-use druid::theme::TEXT_COLOR;
-use druid::widget::{CrossAxisAlignment, Flex, Label};
 use druid::{
-    AppLauncher, Color, Data, Env, FontDescriptor, FontFamily, FontWeight, Key, PlatformError, Point, Widget,
-    WidgetExt, WindowDesc, WindowSizePolicy,
+    theme::TEXT_COLOR,
+    widget::{CrossAxisAlignment, Flex, Label},
+    *,
 };
-use tokio::sync::mpsc;
-use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::mpsc::{self, UnboundedSender};
 
 pub const MY_FONT: Key<FontDescriptor> = Key::new("my_font");
 
@@ -25,7 +22,7 @@ impl WindowList {
     }
 
     pub fn init(point: impl Into<Point>, font_size: f64, font_color: (u8, u8, u8), border: bool) -> Self {
-        let (tx, mut rx) = mpsc::unbounded_channel::<(String, bool)>();
+        let (updater, mut rx) = mpsc::unbounded_channel::<(String, bool)>();
         let window = WindowDesc::new(ui_builder())
             .title("脚本列表")
             .set_position(point)
@@ -51,11 +48,7 @@ impl WindowList {
             }
         });
 
-        Self {
-            app,
-            app_data: AppData::default(),
-            updater: tx,
-        }
+        Self { app, app_data: AppData::default(), updater }
     }
 }
 

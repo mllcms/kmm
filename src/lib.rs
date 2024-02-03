@@ -1,7 +1,9 @@
-use std::ops::Sub;
-use std::path::PathBuf;
-use std::process::exit;
-use std::time::{Duration, Instant};
+use std::{
+    ops::Sub,
+    path::PathBuf,
+    process::exit,
+    time::{Duration, Instant},
+};
 
 use clap::{Parser, Subcommand};
 use rdev::{listen, Event, EventType, Key};

@@ -1,12 +1,15 @@
-use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
-use std::time::Duration;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+    time::Duration,
+};
 
 use rdev::{listen, simulate, Event, EventType, ListenError};
-use tokio::sync::mpsc;
-use tokio::sync::mpsc::UnboundedSender;
-use tokio::task::JoinHandle;
-use tokio::time::sleep;
+use tokio::{
+    sync::{mpsc, mpsc::UnboundedSender},
+    task::JoinHandle,
+    time::sleep,
+};
 
 use crate::script::config::{KeyOrButton, Method};
 
