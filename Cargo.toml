@@ -7,8 +7,11 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4.1", features = ["derive"] }
-druid = "0.8.3"
+druid = { version = "0.8.3" }
 rdev = { version = "0.5.3", features = ["serde", "serialize"] }
 serde = { version = "1.0.188", features = ["derive"] }
 tokio = { version = "1.32.0", features = ["full"] }
 toml = "0.7.6"
+
+[profile.release]
+lto = true
