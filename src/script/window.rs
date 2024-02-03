@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Write};
+use std::{collections::HashMap, fmt::Write, sync::Arc};
 
 use druid::{
     theme::TEXT_COLOR,
@@ -7,13 +7,15 @@ use druid::{
 };
 use tokio::sync::mpsc::{self, UnboundedSender};
 
+use crate::script::Title;
+
 pub const MY_FONT: Key<FontDescriptor> = Key::new("my_font");
 
 /// 显示运行中脚本的窗口
 pub struct WindowList {
     pub app: AppLauncher<AppData>,
     pub app_data: AppData,
-    pub updater: UnboundedSender<(String, bool)>,
+    pub updater: UnboundedSender<Title>,
 }
 
 impl WindowList {
@@ -22,7 +24,7 @@ impl WindowList {
     }
 
     pub fn init(point: impl Into<Point>, font_size: f64, font_color: (u8, u8, u8), border: bool) -> Self {
-        let (updater, mut rx) = mpsc::unbounded_channel::<(String, bool)>();
+        let (updater, mut rx) = mpsc::unbounded_channel::<Title>();
         let window = WindowDesc::new(ui_builder())
             .title("脚本列表")
             .set_position(point)
@@ -30,7 +32,6 @@ impl WindowList {
             .set_always_on_top(true)
             .transparent(true)
             .window_size_policy(WindowSizePolicy::Content);
-
         let app = AppLauncher::with_window(window).configure_env(move |env: &mut Env, _data: &AppData| {
             let new_font = FontDescriptor::new(FontFamily::SYSTEM_UI)
                 .with_size(font_size)
@@ -55,7 +56,7 @@ impl WindowList {
 #[derive(Debug, Clone, Default, Data)]
 pub struct AppData {
     #[data(eq)]
-    pub titles: HashMap<String, bool>,
+    pub titles: HashMap<Arc<String>, bool>,
 }
 
 fn ui_builder() -> impl Widget<AppData> {

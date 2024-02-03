@@ -55,7 +55,7 @@ impl Config {
         let list: Vec<Script> = scripts
             .into_iter()
             .map(|item| Script {
-                title: item.title,
+                title: Arc::new(item.title),
                 delay: item.delay.unwrap_or(config.delay),
                 trigger: item.trigger.into_iter().map(|m| (m, false)).collect(),
                 repeat: item.repeat,

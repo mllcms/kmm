@@ -16,6 +16,8 @@ use crate::script::config::{KeyOrButton, Method};
 pub mod config;
 pub mod window;
 
+pub type Title = (Arc<String>, bool);
+
 /// 脚本列表
 pub struct ScriptList(pub Vec<Script>);
 
@@ -74,13 +76,13 @@ impl ScriptList {
 
 #[derive(Debug)]
 pub struct Script {
-    pub title: String,
+    pub title: Arc<String>,
     pub delay: u64,
     pub repeat: usize,
     pub methods: Arc<Vec<Method>>,
     pub task: Option<JoinHandle<()>>,
     pub trigger: HashMap<KeyOrButton, bool>,
-    pub updater: UnboundedSender<(String, bool)>,
+    pub updater: UnboundedSender<Title>,
 }
 
 impl Script {
@@ -89,11 +91,9 @@ impl Script {
         let updater = self.updater.clone();
 
         if let Some(task) = self.task.take() {
-            task.abort();
-            // 开关型不重启
-            if self.repeat == 0 {
-                let _ = updater.send((title.clone(), false));
-                return;
+            if self.repeat == 0 || !task.is_finished() {
+                task.abort();
+                return updater.send((title.clone(), false)).unwrap();
             }
         }
 
