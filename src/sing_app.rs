@@ -21,6 +21,7 @@ impl SingApp {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .share_mode(1) // 保留读取权限
             .open(path.with_extension("lock"))
     }
@@ -46,11 +47,15 @@ impl SingApp {
                 let file = File::options().read(true).open(path)?;
                 let pid = io::read_to_string(file)?;
 
-                process::Command::new("taskkill")
+                let status = process::Command::new("taskkill")
                     .arg("/F") // 使用 /F 标志强制杀死进程
                     .arg("/PID")
                     .arg(pid)
-                    .output()?;
+                    .status()?;
+                if !status.success() {
+                    process::exit(0)
+                }
+
                 sleep(Duration::from_millis(500));
                 let mut lock = Self::lock()?;
                 write!(&mut lock, "{}", process::id())?;
