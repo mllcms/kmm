@@ -1,7 +1,6 @@
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     error::Error,
-    fmt::{Display, Formatter},
     fs, mem,
     path::Path,
     process::exit,
@@ -32,6 +31,7 @@ pub struct Config {
     pub font_color: (u8, u8, u8),
     /// 是否显示边框
     pub border: bool,
+    pub blocks: HashMap<String, Vec<ScriptEvent>>,
     pub scripts: Vec<ScriptItem>,
 }
 
@@ -43,8 +43,7 @@ impl Config {
         let hs: HashSet<&String> = config.scripts.iter().map(|m| &m.title).collect();
 
         if config.scripts.len() != hs.len() {
-            println!("title 不可重复");
-            exit(0)
+            return Err("title 不可重复".into());
         }
 
         let win = WindowList::init(config.point, config.font_size, config.font_color, config.border);
@@ -52,90 +51,97 @@ impl Config {
         let mut scripts = vec![];
         mem::swap(&mut config.scripts, &mut scripts);
 
-        let list: Vec<Script> = scripts
+        let list: Result<Vec<Script>, Box<dyn Error>> = scripts
             .into_iter()
-            .map(|item| Script {
-                title: Arc::new(item.title),
-                delay: item.delay.unwrap_or(config.delay),
-                trigger: item.trigger.into_iter().map(|m| (m, false)).collect(),
-                repeat: item.repeat,
-                task: None,
-                methods: Arc::new(config.transform(item.methods)),
-                updater: win.updater.clone(),
+            .map(|item| {
+                Ok(Script {
+                    title: Arc::new(item.title),
+                    delay: item.delay.unwrap_or(config.delay),
+                    trigger: item.trigger.into_iter().map(|m| (m, false)).collect(),
+                    repeat: item.repeat,
+                    task: None,
+                    methods: Arc::new(config.transform(item.methods)?),
+                    updater: win.updater.clone(),
+                })
             })
             .collect();
 
-        Ok((ScriptList(list), win))
+        Ok((ScriptList(list?), win))
     }
 
-    /// 修正坐标
-    pub fn correct(&self, x: f64, y: f64) -> (f64, f64) {
+    pub fn mouse_move(&self, x: f64, y: f64) -> EventType {
         let x = (x + self.offset.0) / self.scaling;
         let y = (y + self.offset.1) / self.scaling;
-        (x, y)
+        EventType::MouseMove { x, y }
     }
 
-    pub fn transform(&self, methods: Vec<ScriptEvent>) -> Vec<Method> {
+    pub fn transform(&self, methods: Vec<ScriptEvent>) -> Result<Vec<Method>, Box<dyn Error>> {
         let mut res = Vec::new();
         for method in methods {
             match method {
-                ScriptEvent::ClickDown(button) => {
-                    res.push(Method::Event(EventType::ButtonPress(button)));
-                }
-                ScriptEvent::ClickUp(button) => {
-                    res.push(Method::Event(EventType::ButtonRelease(button)));
-                }
+                ScriptEvent::ClickDown(button) => res.push(Method::mouse_down(button)),
+                ScriptEvent::ClickUp(button) => res.push(Method::mouse_up(button)),
                 ScriptEvent::Click(button) => {
-                    res.push(Method::Event(EventType::ButtonPress(button)));
-                    res.push(Method::Event(EventType::ButtonRelease(button)));
+                    res.push(Method::mouse_down(button));
+                    res.push(Method::mouse_up(button));
                 }
                 ScriptEvent::ClickOn(button, x, y) => {
-                    let (x, y) = self.correct(x, y);
-                    res.push(Method::Event(EventType::MouseMove { x, y }));
-                    res.push(Method::Event(EventType::ButtonPress(button)));
-                    res.push(Method::Event(EventType::ButtonRelease(button)));
+                    res.push(Method::Event(self.mouse_move(x, y)));
+                    res.push(Method::mouse_down(button));
+                    res.push(Method::mouse_up(button));
                 }
                 ScriptEvent::ClickTo(button, x, y, x2, y2) => {
-                    let (x, y) = self.correct(x, y);
-                    let (x2, y2) = self.correct(x2, y2);
-                    res.push(Method::Event(EventType::MouseMove { x, y }));
-                    res.push(Method::Event(EventType::ButtonPress(button)));
-                    res.push(Method::Event(EventType::MouseMove { x: x2, y: y2 }));
-                    res.push(Method::Event(EventType::ButtonRelease(button)));
+                    res.push(Method::Event(self.mouse_move(x, y)));
+                    res.push(Method::mouse_down(button));
+                    res.push(Method::Event(self.mouse_move(x2, y2)));
+                    res.push(Method::mouse_up(button));
                 }
-                ScriptEvent::KeyUp(key) => {
-                    res.push(Method::Event(EventType::KeyRelease(key)));
-                }
-                ScriptEvent::KeyDown(key) => {
-                    res.push(Method::Event(EventType::KeyPress(key)));
-                }
+                ScriptEvent::KeyDown(key) => res.push(Method::key_down(key)),
+                ScriptEvent::KeyUp(key) => res.push(Method::key_up(key)),
                 ScriptEvent::Key(key) => {
-                    res.push(Method::Event(EventType::KeyPress(key)));
-                    res.push(Method::Event(EventType::KeyRelease(key)));
+                    res.push(Method::key_down(key));
+                    res.push(Method::key_up(key));
                 }
                 ScriptEvent::Keys(keys) => {
-                    for key in &keys {
-                        res.push(Method::Event(EventType::KeyPress(*key)));
-                    }
-                    for key in &keys {
-                        res.push(Method::Event(EventType::KeyRelease(*key)));
-                    }
+                    keys.iter().for_each(|key| res.push(Method::key_down(*key)));
+                    keys.iter().for_each(|key| res.push(Method::key_up(*key)));
                 }
-                ScriptEvent::Move(x, y) => {
-                    let (x, y) = self.correct(x, y);
-                    res.push(Method::Event(EventType::MouseMove { x, y }));
-                }
-                ScriptEvent::Scroll(delta_x, delta_y) => {
-                    res.push(Method::Event(EventType::Wheel { delta_x, delta_y }));
-                }
-                ScriptEvent::Sleep(n) => {
-                    res.push(Method::Custom(Custom::Sleep(n)));
-                }
+                ScriptEvent::Scroll(delta_x, delta_y) => res.push(Method::Event(EventType::Wheel { delta_x, delta_y })),
+                ScriptEvent::Move(x, y) => res.push(Method::Event(self.mouse_move(x, y))),
+                ScriptEvent::Sleep(n) => res.push(Method::Custom(Custom::Sleep(n))),
                 ScriptEvent::Exit => res.push(Method::Custom(Custom::Exit)),
+                ScriptEvent::Block { sleep, repeat, block } => {
+                    let block = match block {
+                        Block::Name(name) => {
+                            let block = self
+                                .blocks
+                                .get(&name)
+                                .ok_or_else(|| format!("没有找到名为 {name:?} 的 block"))?
+                                .to_owned();
+                            if is_circular_reference(&block, &name) {
+                                return Err(format!("不能引用自身同名的 {name:?} 的 block").into());
+                            }
+                            block
+                        }
+                        Block::Block(val) => val,
+                    };
+                    let block = self.transform(block)?;
+                    for _ in 0..repeat {
+                        res.extend(block.iter().cloned());
+                        res.push(Method::Custom(Custom::Sleep(sleep)))
+                    }
+                    res.pop();
+                }
             }
         }
-        res
+        res.retain(|f| !matches!(f, Method::Custom(Custom::Sleep(0))));
+        Ok(res)
     }
+}
+
+fn is_circular_reference(vec: &[ScriptEvent], name: &str) -> bool {
+    vec.iter()
+        .any(|a| matches!(a,ScriptEvent::Block { block: Block::Name(n), .. } if n == name))
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
@@ -162,6 +168,13 @@ pub struct ScriptItem {
 
     /// 脚本方法
     pub methods: Vec<ScriptEvent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Block {
+    Name(String),
+    Block(Vec<ScriptEvent>),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -201,55 +214,17 @@ pub enum ScriptEvent {
     Scroll(i64, i64),
 
     /// 自定义事件
+    Block {
+        repeat: usize,
+        sleep: u64,
+        block: Block,
+    },
     Sleep(u64),
     Exit,
 }
 
-fn button_to_toml(button: &Button) -> String {
-    match button {
-        Button::Unknown(n) => format!("{{ Unknown = {n} }}"),
-        _ => format!("{button:?}"),
-    }
-}
-
-fn key_to_toml(key: &Key) -> String {
-    match key {
-        Key::Unknown(n) => format!("{{ Unknown = {n} }}"),
-        _ => format!("{key:?}"),
-    }
-}
-
-impl Display for ScriptEvent {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            ScriptEvent::Click(button) => button_to_toml(button),
-            ScriptEvent::ClickUp(button) => button_to_toml(button),
-            ScriptEvent::ClickDown(button) => button_to_toml(button),
-            ScriptEvent::ClickOn(button, x, y) => {
-                format!("{}, {}, {}", button_to_toml(button), x, y)
-            }
-            ScriptEvent::ClickTo(button, x, y, x2, y2) => {
-                format!("{}, {x}, {y}, {x2}, {y2}", button_to_toml(button))
-            }
-            ScriptEvent::KeyUp(key) => key_to_toml(key),
-            ScriptEvent::KeyDown(key) => key_to_toml(key),
-            ScriptEvent::Key(key) => key_to_toml(key),
-            ScriptEvent::Keys(keys) => format!("[{}]", keys.iter().map(key_to_toml).collect::<Vec<_>>().join(", ")),
-            ScriptEvent::Move(x, y) => format!("[{x}, {y}]"),
-            ScriptEvent::Scroll(x, y) => format!("[{x}, {y}]"),
-            ScriptEvent::Sleep(n) => n.to_string(),
-            _ => {
-                let _ = write!(f, "{{ event = {:?} }}", self);
-                return Ok(());
-            }
-        };
-        write!(f, "{s}")
-    }
-}
-
 /// 自定义事件
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "event", content = "args")]
 pub enum Custom {
     /// 睡眠 ms 毫秒
     Sleep(u64),
@@ -273,4 +248,19 @@ pub enum Method {
     Event(EventType),
     /// 自定义
     Custom(Custom),
+}
+
+impl Method {
+    fn key_down(key: Key) -> Self {
+        Self::Event(EventType::KeyPress(key))
+    }
+    fn key_up(key: Key) -> Self {
+        Self::Event(EventType::KeyRelease(key))
+    }
+    fn mouse_down(button: Button) -> Self {
+        Self::Event(EventType::ButtonPress(button))
+    }
+    fn mouse_up(button: Button) -> Self {
+        Self::Event(EventType::ButtonRelease(button))
+    }
 }

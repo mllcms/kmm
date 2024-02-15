@@ -32,11 +32,11 @@ methods = [{ event = "Keys", args = ["MetaLeft", "KeyD"] }]
 # 脚本 C
 [[scripts]]
 title = "测试显示"
-repeat = 4
+repeat = 100
 trigger = [{ key = "Home" }]
 methods = [{ event = "Sleep", args = 500 }]
 
-# 脚本D
+# 脚本 D
 [[scripts]]
 title = "XXX"
 # 执行次数; PS: 0 无限循环直到下次触发停止
@@ -71,4 +71,22 @@ methods = [
     { event = "Sleep", args = 100 },
     # 退出整个程序
     { event = "Exit" },
+]
+
+# 脚本 E
+[[scripts]]
+title = "测试脚本块"
+repeat = 100
+trigger = [{ key = "KpPlus" }]
+methods = [
+    { event = "Block", args = { repeat = 10, sleep = 0, block = [
+        { event = "Sleep", args = 500 }
+    ] } },
+    { event = "Block", args = { repeat = 10, sleep = 0, block = "脚本块1" } },
+    { event = "Exit" }
+]
+
+[blocks]
+"脚本块1" = [
+    { event = "Sleep", args = 500 },
 ]
